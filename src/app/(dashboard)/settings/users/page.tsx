@@ -16,6 +16,7 @@ import type { ColumnDef } from '@/components/ui';
 interface Role { roleID: number; name: string }
 
 interface User {
+  [key: string]: any;
   userID: number;
   surname: string;
   otherNames: string;
@@ -110,7 +111,7 @@ export default function UsersPage() {
           <h1 className="text-xl font-semibold text-zinc-800">Users</h1>
           <p className="text-sm text-zinc-500 mt-0.5">Manage system user accounts</p>
         </div>
-        <Button variant="primary" label="New User" icon={<Plus className="w-4 h-4" />} onClick={() => setOpen(true)} />
+        <Button variant="primary" onClick={() => setOpen(true)}><Plus className="w-4 h-4" /> New User</Button>
       </div>
 
       <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
@@ -132,8 +133,10 @@ export default function UsersPage() {
         size="full"
         footer={
           <>
-            <Button variant="neutral" label="Cancel" onClick={() => setOpen(false)} />
-            <Button variant="primary" label={isSubmitting ? 'Saving…' : 'Create User'} loading={isSubmitting} onClick={handleSubmit(onSubmit)} />
+            <Button variant="neutral" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="primary" loading={isSubmitting} onClick={handleSubmit(onSubmit)}>
+              {isSubmitting ? 'Saving…' : 'Create User'}
+            </Button>
           </>
         }
       >

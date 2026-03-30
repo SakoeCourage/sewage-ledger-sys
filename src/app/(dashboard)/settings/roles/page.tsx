@@ -14,6 +14,7 @@ import type { ColumnDef } from '@/components/ui';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Role {
+  [key: string]: any;
   roleID: number;
   name: string;
   description: string;
@@ -71,7 +72,7 @@ export default function RolesPage() {
           <h1 className="text-xl font-semibold text-zinc-800">Roles</h1>
           <p className="text-sm text-zinc-500 mt-0.5">Define access roles for system users</p>
         </div>
-        <Button variant="primary" label="New Role" icon={<Plus className="w-4 h-4" />} onClick={() => setOpen(true)} />
+        <Button variant="primary" onClick={() => setOpen(true)}><Plus className="w-4 h-4" /> New Role</Button>
       </div>
 
       <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
@@ -93,8 +94,10 @@ export default function RolesPage() {
         size="auto"
         footer={
           <>
-            <Button variant="neutral" label="Cancel" onClick={() => setOpen(false)} />
-            <Button variant="primary" label={isSubmitting ? 'Saving…' : 'Save Role'} loading={isSubmitting} onClick={handleSubmit(onSubmit)} />
+            <Button variant="neutral" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="primary" loading={isSubmitting} onClick={handleSubmit(onSubmit)}>
+              {isSubmitting ? 'Saving…' : 'Save Role'}
+            </Button>
           </>
         }
       >

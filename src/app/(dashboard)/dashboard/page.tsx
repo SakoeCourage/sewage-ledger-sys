@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Client {
+  [key: string]: any;
   clientCode: string;
   name: string;
   clientType: string;
@@ -19,6 +20,7 @@ interface Client {
 }
 
 interface Bill {
+  [key: string]: any;
   billID: number;
   code: string;
   month: string;
@@ -30,6 +32,7 @@ interface Bill {
 }
 
 interface Payment {
+  [key: string]: any;
   paymentID: number;
   dated: string;
   client: { name: string; clientCode: string };

@@ -14,6 +14,7 @@ import type { ColumnDef } from '@/components/ui';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface BillingRate {
+  [key: string]: any;
   billingRateID: number;
   billingType: string;
   rate: number;
@@ -79,7 +80,7 @@ export default function BillingRatesPage() {
           <h1 className="text-xl font-semibold text-zinc-800">Billing Rates</h1>
           <p className="text-sm text-zinc-500 mt-0.5">Configure billing rate tiers</p>
         </div>
-        <Button variant="primary" label="New Rate" icon={<Plus className="w-4 h-4" />} onClick={() => setOpen(true)} />
+        <Button variant="primary" onClick={() => setOpen(true)}><Plus className="w-4 h-4" /> New Rate</Button>
       </div>
 
       <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
@@ -101,8 +102,10 @@ export default function BillingRatesPage() {
         size="auto"
         footer={
           <>
-            <Button variant="neutral" label="Cancel" onClick={() => setOpen(false)} />
-            <Button variant="primary" label={isSubmitting ? 'Saving…' : 'Save Rate'} loading={isSubmitting} onClick={handleSubmit(onSubmit)} />
+            <Button variant="neutral" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="primary" loading={isSubmitting} onClick={handleSubmit(onSubmit)}>
+              {isSubmitting ? 'Saving…' : 'Save Rate'}
+            </Button>
           </>
         }
       >

@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Payment {
+  [key: string]: any;
   paymentID: number;
   code: string;
   dated: string;
@@ -34,8 +35,8 @@ interface Client { clientID: number; name: string }
 const MODES = ['Cash', 'Cheque', 'MoMo', 'Bank Transfer'] as const;
 
 const schema = z.object({
-  clientID:    z.number({ required_error: 'Client is required', invalid_type_error: 'Client is required' }),
-  paymentMode: z.enum(MODES, { required_error: 'Payment mode is required' }),
+  clientID:    z.number({ message: 'Client is required' }),
+  paymentMode: z.enum(MODES, { message: 'Payment mode is required' }),
   amount:      z.string().min(1, 'Amount is required'),
   refNo:       z.string().optional(),
   bank:        z.string().optional(),
@@ -137,7 +138,7 @@ export default function PaymentsPage() {
             <span className="font-semibold text-zinc-700">GHS {total.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</span>
           </p>
         </div>
-        <Button variant="primary" label="Record Payment" icon={<Plus className="w-4 h-4" />} onClick={() => setOpen(true)} />
+        <Button variant="primary" onClick={() => setOpen(true)}><Plus className="w-4 h-4" /> Record Payment</Button>
       </div>
 
       <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
@@ -167,8 +168,10 @@ export default function PaymentsPage() {
         size="auto"
         footer={
           <>
-            <Button variant="neutral" label="Cancel" onClick={() => setOpen(false)} />
-            <Button variant="primary" label={isSubmitting ? 'Saving…' : 'Record Payment'} loading={isSubmitting} onClick={handleSubmit(onSubmit)} />
+            <Button variant="neutral" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="primary" loading={isSubmitting} onClick={handleSubmit(onSubmit)}>
+              {isSubmitting ? 'Saving…' : 'Record Payment'}
+            </Button>
           </>
         }
       >

@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Bill {
+  [key: string]: any;
   billID: number;
   code: string;
   month: string;
@@ -34,11 +35,11 @@ interface BillingRate { billingRateID: number; billingType: string; rate: number
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const schema = z.object({
-  clientID:             z.number({ required_error: 'Client is required', invalid_type_error: 'Client is required' }),
-  billingRateID:        z.number({ required_error: 'Billing rate is required', invalid_type_error: 'Billing rate is required' }),
-  month:                z.date({ required_error: 'Month is required' }),
-  isSupervisorApproved: z.boolean().default(false),
-  isDispatched:         z.boolean().default(false),
+  clientID:             z.number({ message: 'Client is required' }),
+  billingRateID:        z.number({ message: 'Billing rate is required' }),
+  month:                z.date({ message: 'Month is required' }),
+  isSupervisorApproved: z.boolean(),
+  isDispatched:         z.boolean(),
   narration:            z.string().optional(),
 });
 
@@ -146,7 +147,7 @@ export default function BillingPage() {
           <h1 className="text-xl font-semibold text-zinc-800">Billing</h1>
           <p className="text-sm text-zinc-500 mt-0.5">View and manage client bills</p>
         </div>
-        <Button variant="primary" label="New Bill" icon={<Plus className="w-4 h-4" />} onClick={() => setOpen(true)} />
+        <Button variant="primary" onClick={() => setOpen(true)}><Plus className="w-4 h-4" /> New Bill</Button>
       </div>
 
       <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
@@ -178,8 +179,10 @@ export default function BillingPage() {
         size="auto"
         footer={
           <>
-            <Button variant="neutral" label="Cancel" onClick={() => setOpen(false)} />
-            <Button variant="primary" label={isSubmitting ? 'Saving…' : 'Create Bill'} loading={isSubmitting} onClick={handleSubmit(onSubmit)} />
+            <Button variant="neutral" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="primary" loading={isSubmitting} onClick={handleSubmit(onSubmit)}>
+              {isSubmitting ? 'Saving…' : 'Create Bill'}
+            </Button>
           </>
         }
       >

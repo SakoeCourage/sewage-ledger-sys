@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Client {
+  [key: string]: any;
   clientID: number;
   clientCode: string;
   clientType: string;
@@ -35,13 +36,13 @@ interface BillingRate {
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const schema = z.object({
-  clientType:    z.enum(['Individual', 'Corporate'], { required_error: 'Client type is required' }),
+  clientType:    z.enum(['Individual', 'Corporate'] as const, { message: 'Client type is required' }),
   name:          z.string().min(1, 'Name is required'),
   address:       z.string().min(1, 'Address is required'),
   meterNo:       z.string().min(1, 'Meter number is required'),
   industryType:  z.string().min(1, 'Industry type is required'),
   dischargeVol:  z.string().min(1, 'Discharge volume is required'),
-  billingRateID: z.number({ required_error: 'Billing rate is required', invalid_type_error: 'Billing rate is required' }),
+  billingRateID: z.number({ message: 'Billing rate is required' }),
   tin:   z.string().optional(),
   docID: z.string().optional(),
   cert:  z.string().optional(),
@@ -130,7 +131,7 @@ export default function ClientsPage() {
           <h1 className="text-xl font-semibold text-zinc-800">Clients</h1>
           <p className="text-sm text-zinc-500 mt-0.5">Manage individual and corporate clients</p>
         </div>
-        <Button variant="primary" label="New Client" icon={<Plus className="w-4 h-4" />} onClick={() => setOpen(true)} />
+        <Button variant="primary" onClick={() => setOpen(true)}><Plus className="w-4 h-4" /> New Client</Button>
       </div>
 
       <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
@@ -160,8 +161,10 @@ export default function ClientsPage() {
         size="full"
         footer={
           <>
-            <Button variant="neutral" label="Cancel" onClick={() => setOpen(false)} />
-            <Button variant="primary" label={isSubmitting ? 'Saving…' : 'Save Client'} loading={isSubmitting} onClick={handleSubmit(onSubmit)} />
+            <Button variant="neutral" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="primary" loading={isSubmitting} onClick={handleSubmit(onSubmit)}>
+              {isSubmitting ? 'Saving…' : 'Save Client'}
+            </Button>
           </>
         }
       >
