@@ -86,7 +86,7 @@ const clientColumns: ColumnDef<Client>[] = [
     body: (row) => (
       <span
         className={cn(
-          'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+          'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
           row.clientType === 'Corporate'
             ? 'bg-blue-50 text-blue-700'
             : 'bg-emerald-50 text-emerald-700',
@@ -126,13 +126,13 @@ const billColumns: ColumnDef<Bill>[] = [
     body: (row) => (
       <span
         className={cn(
-          'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+          'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
           row.isSupervisorApproved
             ? 'bg-emerald-50 text-emerald-700'
             : 'bg-zinc-100 text-zinc-500',
         )}
       >
-        {row.isSupervisorApproved ? 'Yes' : 'Pending'}
+        {row.isSupervisorApproved ? 'Approved' : 'Pending'}
       </span>
     ),
   },
@@ -149,7 +149,7 @@ const paymentColumns: ColumnDef<Payment>[] = [
     header: 'Amount (GHS)',
     body: (row) =>
       typeof row.amount === 'number'
-        ? row.amount.toLocaleString('en-GH', { minimumFractionDigits: 2 })
+        ? <span className="font-bold tabular-nums">GHS {row.amount.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</span>
         : '—',
     sortable: true,
   },
@@ -184,8 +184,8 @@ export default function DashboardPage() {
 
   const totalCollected = payments.reduce((sum, p) => sum + (p.amount ?? 0), 0);
 
-  const recentBills = bills.slice(-10).reverse();
-  const recentPayments = payments.slice(-10).reverse();
+  const recentBills = bills.slice(-5).reverse();
+  const recentPayments = payments.slice(-5).reverse();
 
   return (
     <div className="flex flex-col gap-6">
@@ -235,15 +235,14 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Recent clients */}
+      {/* Clients overview */}
       <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
         <h2 className="text-sm font-semibold text-zinc-700 mb-4">Clients</h2>
         <AppDataTable<Client>
           columns={clientColumns}
-          data={clients}
-          filterablePlaceholder="Search clients…"
-          searchFields={['name', 'clientCode', 'meterNo', 'address']}
+          data={clients.slice(0, 5)}
           pageSize={5}
+          enablePaginator={false}
         />
       </div>
 
@@ -254,9 +253,8 @@ export default function DashboardPage() {
           <AppDataTable<Bill>
             columns={billColumns}
             data={recentBills}
-            filterablePlaceholder="Search bills…"
-            searchFields={['code', 'month']}
             pageSize={5}
+            enablePaginator={false}
           />
         </div>
 
@@ -265,9 +263,8 @@ export default function DashboardPage() {
           <AppDataTable<Payment>
             columns={paymentColumns}
             data={recentPayments}
-            filterablePlaceholder="Search payments…"
-            searchFields={['paymentMode', 'refNo']}
             pageSize={5}
+            enablePaginator={false}
           />
         </div>
       </div>

@@ -5,12 +5,21 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus } from 'lucide-react';
+import { Plus, ArrowUpRight } from 'lucide-react';
+import Link from 'next/link';
 import api from '@/lib/api';
 import { AppDataTable, Button, BottomSheet, TextInput, SelectInput } from '@/components/ui';
 import { toast } from '@/components/ui';
 import type { ColumnDef } from '@/components/ui';
 import { cn } from '@/lib/utils';
+
+// ─── Mock Data ────────────────────────────────────────────────────────────────
+
+const MOCK_CLIENTS: Client[] = [
+  { clientID: 1, clientCode: 'CLNT-001', clientType: 'Corporate', name: 'Ghana Broadcasting Corp.', industryType: 'Media', address: 'Kanda, Accra', meterNo: 'MTR-001', tin: 'TIN-001', dischargeVol: 120.5 },
+  { clientID: 2, clientCode: 'CLNT-002', clientType: 'Individual', name: 'Kwame Mensah', industryType: 'Residential', address: 'East Legon, Accra', meterNo: 'MTR-002', tin: 'TIN-002', dischargeVol: 45.2 },
+  { clientID: 3, clientCode: 'CLNT-003', clientType: 'Corporate', name: 'Golden Tulip Hotel', industryType: 'Hospitality', address: 'Airport City, Accra', meterNo: 'MTR-003', tin: 'TIN-003', dischargeVol: 850.0 },
+];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,6 +85,20 @@ const columns: ColumnDef<Client>[] = [
     body: (row) => typeof row.dischargeVol === 'number' ? row.dischargeVol.toLocaleString() : '—',
     sortable: true,
   },
+  {
+    field: 'actions',
+    header: '',
+    style: { width: '4rem' },
+    body: (row) => (
+      <Link 
+        href={`/clients/${row.clientCode}/manage?name=${encodeURIComponent(row.name)}`}
+        className="flex items-center justify-center w-8 h-8 rounded-lg text-[#4a907a] hover:bg-[#4a907a]/10 transition-colors"
+        title="Manage Client"
+      >
+        <ArrowUpRight className="w-4 h-4" />
+      </Link>
+    ),
+  },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -86,7 +109,16 @@ export default function ClientsPage() {
 
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ['clients'],
-    queryFn: () => api.get('/api/Client/all').then((r) => r.data),
+    queryFn: async () => {
+      try {
+        const res = await api.get('/api/Client/all');
+        return res.data;
+      } catch (err) {
+        console.warn('Backend fetch failed, using mock data for demo:', err);
+        return MOCK_CLIENTS;
+      }
+    },
+    initialData: MOCK_CLIENTS,
   });
 
   const { data: rates = [] } = useQuery<BillingRate[]>({
