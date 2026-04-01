@@ -11,15 +11,8 @@ import api from '@/lib/api';
 import { AppDataTable, Button, BottomSheet, TextInput, SelectInput } from '@/components/ui';
 import { toast } from '@/components/ui';
 import type { ColumnDef } from '@/components/ui';
+import { getUserProfile } from '@/lib/auth';
 import { cn } from '@/lib/utils';
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const MOCK_CLIENTS: Client[] = [
-  { clientID: 1, clientCode: 'CLNT-001', clientType: 'Corporate', name: 'Ghana Broadcasting Corp.', industryType: 'Media', address: 'Kanda, Accra', meterNo: 'MTR-001', tin: 'TIN-001', dischargeVol: 120.5 },
-  { clientID: 2, clientCode: 'CLNT-002', clientType: 'Individual', name: 'Kwame Mensah', industryType: 'Residential', address: 'East Legon, Accra', meterNo: 'MTR-002', tin: 'TIN-002', dischargeVol: 45.2 },
-  { clientID: 3, clientCode: 'CLNT-003', clientType: 'Corporate', name: 'Golden Tulip Hotel', industryType: 'Hospitality', address: 'Airport City, Accra', meterNo: 'MTR-003', tin: 'TIN-003', dischargeVol: 850.0 },
-];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,7 +38,7 @@ interface BillingRate {
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const schema = z.object({
-  clientType:    z.enum(['Individual', 'Corporate'] as const, { message: 'Client type is required' }),
+  clientType:    z.enum(['Residential', 'Industry'] as const, { message: 'Client type is required' }),
   name:          z.string().min(1, 'Name is required'),
   address:       z.string().min(1, 'Address is required'),
   meterNo:       z.string().min(1, 'Meter number is required'),
@@ -70,7 +63,7 @@ const columns: ColumnDef<Client>[] = [
     header: 'Type',
     body: (row) => (
       <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-        row.clientType === 'Corporate' ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700')}>
+        row.clientType === 'Industry' ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700')}>
         {row.clientType}
       </span>
     ),
@@ -107,18 +100,12 @@ export default function ClientsPage() {
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
 
-  const { data: clients = [] } = useQuery<Client[]>({
+  const { data: clients = [], isLoading: clientsLoading } = useQuery<Client[]>({
     queryKey: ['clients'],
     queryFn: async () => {
-      try {
-        const res = await api.get('/api/Client/all');
-        return res.data;
-      } catch (err) {
-        console.warn('Backend fetch failed, using mock data for demo:', err);
-        return MOCK_CLIENTS;
-      }
+      const res = await api.get('/api/Client/all');
+      return res.data;
     },
-    initialData: MOCK_CLIENTS,
   });
 
   const { data: rates = [] } = useQuery<BillingRate[]>({
@@ -142,10 +129,11 @@ export default function ClientsPage() {
 
   const onSubmit = async (values: FormValues) => {
     try {
+      const user = getUserProfile();
       await api.post('/api/Client', {
         ...values,
         dischargeVol: parseFloat(values.dischargeVol),
-        userID: 0,
+        userID: user?.UserID || 1,
       });
       toast.success('Client registered successfully');
       qc.invalidateQueries({ queryKey: ['clients'] });
@@ -161,7 +149,7 @@ export default function ClientsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-zinc-800">Clients</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">Manage individual and corporate clients</p>
+          <p className="text-sm text-zinc-500 mt-0.5">Manage residential and industry clients</p>
         </div>
         <Button variant="primary" onClick={() => setOpen(true)}><Plus className="w-4 h-4" /> New Client</Button>
       </div>
@@ -178,7 +166,10 @@ export default function ClientsPage() {
             enable: true,
             filters: [{
               type: 'SelectFilter', accessor: 'clientType', label: 'Client Type',
-              args: { options: [{ label: 'Individual', value: 'Individual' }, { label: 'Corporate', value: 'Corporate' }] },
+              args: { options: [
+                { label: 'Residential', value: 'Residential' },
+                { label: 'Industry', value: 'Industry' }
+              ] },
             }],
           }}
         />
@@ -203,7 +194,10 @@ export default function ClientsPage() {
         <form className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <Controller name="clientType" control={control} render={({ field }) => (
             <SelectInput label="Client Type" name={field.name} value={field.value} required
-              options={[{ label: 'Individual', value: 'Individual' }, { label: 'Corporate', value: 'Corporate' }]}
+              options={[
+                { label: 'Residential', value: 'Residential' },
+                { label: 'Industry', value: 'Industry' }
+              ]}
               onChange={field.onChange} error={errors.clientType?.message} />
           )} />
 
@@ -213,8 +207,17 @@ export default function ClientsPage() {
           )} />
 
           <Controller name="industryType" control={control} render={({ field }) => (
-            <TextInput label="Industry Type" name={field.name} value={field.value}
-              onChange={field.onChange} error={errors.industryType?.message} placeholder="e.g. Manufacturing" required />
+            <SelectInput label="Industry Type" name={field.name} value={field.value} required
+              options={[
+                { label: 'Hospitality', value: 'Hospitality' },
+                { label: 'Manufacturing', value: 'Manufacturing' },
+                { label: 'Educational', value: 'Educational' },
+                { label: 'Medical', value: 'Medical' },
+                { label: 'Residential', value: 'Residential' },
+                { label: 'Commercial', value: 'Commercial' },
+                { label: 'Other', value: 'Other' },
+              ]}
+              onChange={field.onChange} error={errors.industryType?.message} />
           )} />
 
           <Controller name="meterNo" control={control} render={({ field }) => (

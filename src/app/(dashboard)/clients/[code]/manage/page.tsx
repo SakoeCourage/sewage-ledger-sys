@@ -1,29 +1,20 @@
 'use client';
 
-import { useState, useMemo, use } from 'react';
+import { useState, useMemo, useEffect, use } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
-  ChevronLeft, 
   CreditCard, 
-  History, 
   Info, 
   Receipt, 
   TrendingUp, 
   TrendingDown,
-  ArrowUpRight,
-  ArrowDownRight,
   Wallet,
-  Calendar,
-  MapPin,
-  Hash,
   Activity,
-  Plus,
-  Users
+  Plus
 } from 'lucide-react';
-import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import api from '@/lib/api';
 import { 
@@ -38,79 +29,7 @@ import {
 import { toast } from '@/components/ui';
 import type { ColumnDef } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { useSearchParams } from 'next/navigation';
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const getMockClient = (code: string, name: string = 'Ghana Industrial Ltd'): Client => ({
-  clientID: 9999,
-  clientCode: code,
-  clientType: 'Corporate',
-  name: name,
-  address: '123 Utility Avenue, Accra, Ghana',
-  meterNo: 'MTR-882910',
-  tin: 'GHA-77281-0',
-  industryType: 'Manufacturing',
-  dischargeVol: 450.5,
-  docID: 'DOC-001',
-  cert: 'CERT-QX',
-  lease: 'LSE-2024',
-  bills: [
-    {
-      billID: 101,
-      code: 'B-001',
-      month: 'January 2026',
-      dated: '2026-01-05T10:00:00Z',
-      balanceBroughtForward: 0,
-      isSupervisorApproved: true,
-      isDispatched: true,
-      narration: 'Initial billing',
-      billingRate: { rate: 1200.50 }
-    },
-    {
-      billID: 102,
-      code: 'B-002',
-      month: 'February 2026',
-      dated: '2026-02-05T10:00:00Z',
-      balanceBroughtForward: 1200.50,
-      isSupervisorApproved: true,
-      isDispatched: true,
-      narration: 'Monthly utility charge',
-      billingRate: { rate: 1350.00 }
-    },
-    {
-      billID: 103,
-      code: 'B-003',
-      month: 'March 2026',
-      dated: '2026-03-05T10:00:00Z',
-      balanceBroughtForward: 2550.50,
-      isSupervisorApproved: false,
-      isDispatched: false,
-      narration: 'Current period billing',
-      billingRate: { rate: 1100.00 }
-    }
-  ],
-  payments: [
-    {
-      paymentID: 201,
-      code: 'R-001',
-      dated: '2026-01-20T14:30:00Z',
-      paymentMode: 'Bank Transfer',
-      amount: 1200.50,
-      refNo: 'TXN-99201',
-      bank: 'GCB Bank'
-    },
-    {
-      paymentID: 202,
-      code: 'R-002',
-      dated: '2026-02-25T09:15:00Z',
-      paymentMode: 'MoMo',
-      amount: 500.00,
-      refNo: 'MTN-00213',
-      bank: ''
-    }
-  ]
-});
+import { getUserProfile } from '@/lib/auth';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -127,6 +46,7 @@ interface Client {
   docID: string;
   cert: string;
   lease: string;
+  currentBillingRate: { rate: number; type: string };
   bills: Bill[];
   payments: Payment[];
 }
@@ -134,14 +54,12 @@ interface Client {
 interface Bill {
   [key: string]: any;
   billID: number;
-  code: string;
   month: string;
+  year: number;
   dated: string;
-  balanceBroughtForward: number;
   isSupervisorApproved: boolean;
   isDispatched: boolean;
-  narration: string;
-  billingRate: { rate: number };
+  rate: { rate: number; billingType: string };
 }
 
 interface Payment {
@@ -150,20 +68,11 @@ interface Payment {
   code: string;
   dated: string;
   paymentMode: string;
-  amount: number;
   refNo: string;
   bank: string;
-}
-
-interface LedgerEntry {
-  [key: string]: any;
-  id: string;
-  date: string;
-  type: 'Bill' | 'Payment';
+  dateOnCheque: string;
   amount: number;
-  reference: string;
-  description: string;
-  runningBalance: number;
+  cashier: { name: string; email: string; tel: string };
 }
 
 // ─── Payment Schema ───────────────────────────────────────────────────────────
@@ -207,31 +116,43 @@ function StatCard({ label, value, icon: Icon, trend, color }: any) {
 
 export default function ManageClientPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params);
-  const searchParams = useSearchParams();
-  const clientName = searchParams.get('name') || 'Ghana Industrial Ltd';
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'ledger' | 'bills' | 'payments'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'bills' | 'payments'>('overview');
   const [isPaymentSheetOpen, setIsPaymentSheetOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const qc = useQueryClient();
 
-  const { data: client, isLoading } = useQuery<Client>({
+  useEffect(() => {
+    setUserProfile(getUserProfile());
+  }, []);
+
+  const { data: client, isLoading, isError } = useQuery<Client>({
     queryKey: ['client-ledger', code],
     queryFn: async () => {
-      try {
-        const res = await api.get(`/api/Client/byCode?code=${code}`);
-        return res.data;
-      } catch (err) {
-        console.warn('Backend fetch failed, using mock data for demo:', err);
-        return getMockClient(code, clientName);
-      }
-    },
-    // If the above fails or we want to force simulation:
-    initialData: () => getMockClient(code, clientName),
+      const res = await api.get(`/api/Client/byCode?code=${code}`);
+      return res.data;
+    }
   });
+
+  const GHANA_BANKS = [
+    { label: 'GCB Bank', value: 'GCB Bank' },
+    { label: 'Ecobank Ghana', value: 'Ecobank Ghana' },
+    { label: 'Stanbic Bank', value: 'Stanbic Bank' },
+    { label: 'Zenith Bank', value: 'Zenith Bank' },
+    { label: 'Absa Bank', value: 'Absa Bank' },
+    { label: 'Fidelity Bank', value: 'Fidelity Bank' },
+    { label: 'CalBank', value: 'CalBank' },
+    { label: 'ADB Bank', value: 'ADB Bank' },
+    { label: 'Prudential Bank', value: 'Prudential Bank' },
+    { label: 'SG-Ghana', value: 'SG-Ghana' },
+    { label: 'UBA Ghana', value: 'UBA Ghana' },
+    { label: 'Access Bank', value: 'Access Bank' },
+    { label: 'FNB Ghana', value: 'FNB Ghana' },
+  ];
 
   const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
-    defaultValues: { paymentMode: undefined, amount: '', refNo: '', bank: '', dateOnCheque: null },
+    defaultValues: { paymentMode: undefined, amount: '', refNo: '', bank: '', dateOnCheque: new Date() },
   });
 
   const paymentMode = useWatch({ control, name: 'paymentMode' });
@@ -243,8 +164,8 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
 
   const stats = useMemo(() => {
     if (!client) return { totalBilled: 0, totalPaid: 0, balance: 0 };
-    const totalBilled = client.bills.reduce((sum, b) => sum + (b.billingRate?.rate || 0), 0);
-    const totalPaid = client.payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const totalBilled = client.bills?.reduce((sum, b) => sum + (b.rate?.rate || 0), 0) || 0;
+    const totalPaid = client.payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
     return {
       totalBilled,
       totalPaid,
@@ -252,54 +173,21 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
     };
   }, [client]);
 
-  const ledger = useMemo<LedgerEntry[]>(() => {
-    if (!client) return [];
-    
-    const entries: any[] = [
-      ...client.bills.map(b => ({
-        id: `bill-${b.billID}`,
-        date: b.dated,
-        type: 'Bill',
-        amount: b.billingRate?.rate || 0,
-        reference: b.code,
-        description: `Bill for ${b.month}`,
-      })),
-      ...client.payments.map(p => ({
-        id: `pay-${p.paymentID}`,
-        date: p.dated,
-        type: 'Payment',
-        amount: -(p.amount || 0),
-        reference: p.code,
-        description: `Payment via ${p.paymentMode}`,
-      }))
-    ];
-
-    // Sort by date ascending to calculate running balance
-    entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    let balance = 0;
-    return entries.map(entry => {
-      balance += entry.amount;
-      return { ...entry, runningBalance: balance };
-    }).reverse(); // Latest first for display
-  }, [client]);
-
   // ─── Handlers ─────────────────────────────────────────────────────────────────
 
   const onPaymentSubmit = async (values: PaymentFormValues) => {
     try {
       await api.post('/api/Payment', {
-        clientID: client?.clientID,
-        paymentMode: values.paymentMode,
-        amount: parseFloat(values.amount),
-        refNo: values.refNo || null,
-        bank: values.bank || null,
-        dateOnCheque: values.dateOnCheque ? values.dateOnCheque.toISOString().split('T')[0] : null,
-        userID: 0,
+        ClientID: client?.clientID,
+        PaymentMode: values.paymentMode,
+        Amount: parseFloat(values.amount),
+        RefNo: values.refNo || null,
+        Bank: values.bank || null,
+        DateOnCheque: values.dateOnCheque ? values.dateOnCheque.toISOString().split('T')[0] : null,
+        UserID: userProfile?.UserID || 1, // Dynamically set from authenticated session
       });
       toast.success('Payment recorded successfully');
       qc.invalidateQueries({ queryKey: ['client-ledger', code] });
-      qc.invalidateQueries({ queryKey: ['payments'] });
       reset();
       setIsPaymentSheetOpen(false);
     } catch {
@@ -320,7 +208,19 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
     );
   }
 
-  if (!client) return <EmptyState caption="Client not found. We couldn't find a client with that code." />;
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <EmptyState 
+          caption="Failed to load client profile. Please check your connection or try again later." 
+          actionName="Retry Connection"
+          onAction={() => qc.invalidateQueries({ queryKey: ['client-ledger', code] })}
+        />
+      </div>
+    );
+  }
+
+  if (!client) return <EmptyState caption="Client not found. We couldn't find a client with the provided code." />;
 
   return (
     <div className="flex flex-col gap-4 pb-20">
@@ -329,7 +229,6 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
         <div className="flex items-center gap-8 relative h-12">
           {[
             { id: 'overview', label: 'Overview', icon: Info },
-            { id: 'ledger', label: 'Ledger', icon: History },
             { id: 'bills', label: 'Bills', icon: Receipt },
             { id: 'payments', label: 'Payments', icon: CreditCard },
           ].map((tab) => (
@@ -357,6 +256,7 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
           {client.name}
         </span>
       </div>
+
       <div className="flex flex-col gap-6">
         <div className="min-h-[400px]">
           <AnimatePresence mode="wait">
@@ -394,8 +294,14 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
                         <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Industry Category</p>
                         <p className="text-[13px] font-semibold text-zinc-700">{client.industryType}</p>
                       </div>
+
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Billing Rate ({client.currentBillingRate?.type})</p>
+                        <p className="text-[13px] font-semibold text-zinc-700">GHS {client.currentBillingRate?.rate?.toLocaleString()}</p>
+                      </div>
                     </div>
                   </div>
+
                   <div className="bg-white rounded-2xl border border-zinc-100 p-6">
                     <h3 className="text-xs font-bold text-[#4a907a] uppercase tracking-[0.15em] mb-6 pb-3 border-b border-zinc-100">
                       Location & Contact
@@ -418,6 +324,10 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Industry Type</p>
                         <p className="text-[13px] font-semibold text-zinc-700">{client.industryType}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Discharge Volume</p>
+                        <p className="text-[13px] font-semibold text-zinc-700 tabular-nums">{client.dischargeVol?.toLocaleString()} Litres</p>
                       </div>
                     </div>
                   </div>
@@ -456,17 +366,17 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
                       
                       <div className="space-y-6">
                         <div className="flex items-center justify-between py-2 border-b border-white/10">
-                          <span className="text-teal-50 text-[10px] font-bold uppercase">Total Billed</span>
-                          <span className="font-black text-sm text-white tabular-nums">GHS {stats.totalBilled?.toLocaleString()}</span>
+                          <span className="text-teal-50 text-[10px] font-bold uppercase">Discharge Vol.</span>
+                          <span className="font-black text-sm text-white tabular-nums">{client.dischargeVol?.toLocaleString()}</span>
                         </div>
                         <div className="flex items-center justify-between py-2 border-b border-white/10">
                           <span className="text-teal-50 text-[10px] font-bold uppercase">Total Paid</span>
                           <span className="font-black text-sm text-white tabular-nums">GHS {stats.totalPaid?.toLocaleString()}</span>
                         </div>
                         <div className="flex items-center justify-between py-2 border-b border-white/10">
-                          <span className="text-teal-100 text-[10px] font-bold uppercase">Last Bill</span>
+                          <span className="text-teal-100 text-[10px] font-bold uppercase">Last Billing Rate</span>
                           <span className="font-black text-sm text-white tabular-nums">
-                            {client.bills?.[0] ? `GHS ${client.bills[0].billingRate?.rate?.toLocaleString()}` : '—'}
+                            {client.bills?.[0] ? `GHS ${client.bills[0].rate?.rate?.toLocaleString()}` : '—'}
                           </span>
                         </div>
                       </div>
@@ -484,71 +394,35 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
               </motion.div>
             )}
 
-            {activeTab === 'ledger' && (
-              <motion.div
-                key="ledger"
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-white rounded-2xl border border-zinc-100 overflow-hidden"
-              >
-                <AppDataTable<LedgerEntry>
-                  columns={[
-                    { field: 'date', header: 'Date', body: (r: LedgerEntry) => <span className="text-zinc-500 font-medium">{new Date(r.date as string).toLocaleDateString('en-GB')}</span> },
-                    { 
-                      field: 'type', 
-                      header: 'Transaction', 
-                      body: (r: LedgerEntry) => (
-                        <div className="flex items-center gap-2">
-                          <div className={cn("p-1.5 rounded-lg", r.type === 'Bill' ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600")}>
-                            {r.type === 'Bill' ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                          </div>
-                          <span className="font-semibold text-zinc-700">{r.type}</span>
-                        </div>
-                      )
-                    },
-                    { field: 'description', header: 'Description' },
-                    { field: 'reference', header: 'Reference', body: (r: LedgerEntry) => <code className="text-[10px] bg-zinc-50 px-1.5 py-0.5 rounded border border-zinc-100">{r.reference as string}</code> },
-                    { 
-                      field: 'amount', 
-                      header: 'Amount', 
-                      body: (r: LedgerEntry) => (
-                        <span className={cn("font-bold tabular-nums", r.type === 'Bill' ? "text-amber-600" : "text-emerald-600")}>
-                          {r.type === 'Bill' ? '+' : '-'}{Math.abs(r.amount as number).toLocaleString('en-GH', { minimumFractionDigits: 2 })}
-                        </span>
-                      )
-                    },
-                    { 
-                      field: 'runningBalance', 
-                      header: 'Balance',
-                      body: (r: LedgerEntry) => (
-                        <span className="font-bold text-zinc-900 tabular-nums">
-                          GHS {(r.runningBalance as number).toLocaleString('en-GH', { minimumFractionDigits: 2 })}
-                        </span>
-                      )
-                    },
-                  ]}
-                  data={ledger}
-                  pageSize={10}
-                />
-              </motion.div>
-            )}
-
             {activeTab === 'bills' && (
               <motion.div key="bills" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-hidden p-5">
-                   {client.bills.length > 0 ? (
+                   {client.bills?.length > 0 ? (
                       <AppDataTable<Bill>
                         columns={[
                           { field: 'code', header: 'Code' },
-                          { field: 'month', header: 'Billing Month', body: (r: Bill) => <span className="font-medium text-zinc-700">{r.month}</span> },
-                          { field: 'dated', header: 'Date', body: (r: Bill) => new Date(r.dated as string).toLocaleDateString('en-GB') },
-                          { field: 'billingRate', header: 'Amount', body: (r: Bill) => <span className="font-bold tabular-nums">GHS {(r.billingRate as any)?.rate?.toLocaleString()}</span> },
+                          { field: 'month', header: 'Month', body: (r: Bill) => <span className="font-medium text-zinc-700">{r.month}</span> },
+                          { field: 'date', header: 'Date', body: (r: Bill) => new Date(r.date as string).toLocaleDateString('en-GB') },
+                          { 
+                            field: 'balanceBroughtForward', 
+                            header: 'Bal. B/F', 
+                            body: (r: Bill) => <span className="font-medium text-zinc-400 tabular-nums">GHS {r.balanceBroughtForward?.toLocaleString()}</span> 
+                          },
                           { 
                             field: 'isSupervisorApproved', 
-                            header: 'Status',
+                            header: 'Approved',
                             body: (r: Bill) => (
-                              <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider", r.isSupervisorApproved ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600")}>
-                                {r.isSupervisorApproved ? 'Approved' : 'Pending'}
+                              <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider", r.isSupervisorApproved ? "bg-emerald-50 text-emerald-600" : "bg-zinc-50 text-zinc-400")}>
+                                {r.isSupervisorApproved ? 'Yes' : 'No'}
+                              </span>
+                            )
+                          },
+                          { 
+                            field: 'isDispatched', 
+                            header: 'Dispatched',
+                            body: (r: Bill) => (
+                              <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider", r.isDispatched ? "bg-blue-50 text-blue-600" : "bg-zinc-50 text-zinc-400")}>
+                                {r.isDispatched ? 'Yes' : 'No'}
                               </span>
                             )
                           }
@@ -581,7 +455,7 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
                   </div>
                   
                   <div className="p-2">
-                    {client.payments.length > 0 ? (
+                    {client.payments?.length > 0 ? (
                       <AppDataTable<Payment>
                         columns={[
                           { field: 'code', header: 'Receipt No.' },
@@ -595,8 +469,8 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
                               </span>
                             )
                           },
-                          { field: 'refNo', header: 'Reference', body: (r: Payment) => <span className="text-zinc-500">{r.refNo || '—'}</span> },
-                          { field: 'amount', header: 'Amount Paid', body: (r: Payment) => <span className="font-bold text-emerald-600 tabular-nums">GHS {(r.amount as number).toLocaleString()}</span> },
+                          { field: 'amount', header: 'Amount Paid', body: (r: Payment) => <span className="font-bold text-emerald-600 tabular-nums">GHS {r.amount?.toLocaleString()}</span> },
+                          { field: 'cashier', header: 'Cashier', body: (r: Payment) => <span className="text-[11px] font-medium text-zinc-500 uppercase">{r.cashier?.name || '—'}</span> },
                         ]}
                         data={client.payments}
                         pageSize={10}
@@ -659,17 +533,16 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
 
           {showBank && (
             <Controller name="bank" control={control} render={({ field }) => (
-              <TextInput label="Bank Name" name={field.name} value={field.value ?? ''}
-                onChange={field.onChange} placeholder="e.g. GCB Bank" />
+              <SelectInput label="Bank Name" name={field.name} value={field.value ?? ''} filter
+                options={GHANA_BANKS}
+                onChange={(e) => field.onChange(e.target.value)} placeholder="Select Bank" />
             )} />
           )}
 
-          {showDate && (
-            <Controller name="dateOnCheque" control={control} render={({ field }) => (
-              <DateInput label="Date on Cheque" name={field.name} value={field.value ?? null}
-                onChange={(e) => field.onChange(e.target.value)} placeholder="Pick date" />
-            )} />
-          )}
+          <Controller name="dateOnCheque" control={control} render={({ field }) => (
+            <DateInput label="Date on Record" name={field.name} value={field.value ?? null}
+              onChange={(e) => field.onChange(e.target.value)} placeholder="Pick date" />
+          )} />
         </form>
       </BottomSheet>
     </div>

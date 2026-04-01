@@ -20,10 +20,10 @@ interface User {
   userID: number;
   surname: string;
   otherNames: string;
-  username: string;
   email: string;
   tel: string;
-  roles: Role[];
+  dateCreated: string;
+  roles?: Role[];
 }
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -43,13 +43,13 @@ type FormValues = z.infer<typeof schema>;
 // ─── Columns ──────────────────────────────────────────────────────────────────
 
 const columns: ColumnDef<User>[] = [
-  { field: 'username', header: 'Username', sortable: true },
   { field: 'surname', header: 'Full Name', sortable: true, body: (row) => `${row.surname} ${row.otherNames}`.trim() },
-  { field: 'email', header: 'Email' },
+  { field: 'email', header: 'Email', sortable: true },
   { field: 'tel', header: 'Phone' },
+  { field: 'dateCreated', header: 'Joined', sortable: true, body: (row) => row.dateCreated ? new Date(row.dateCreated).toLocaleDateString('en-GB') : '—' },
   {
     field: 'roles', header: 'Roles',
-    body: (row) => row.roles?.length > 0 ? (
+    body: (row) => (row.roles && row.roles.length > 0) ? (
       <div className="flex flex-wrap gap-1">
         {row.roles.map((r) => (
           <span key={r.roleID} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#4a907a]/10 text-[#4a907a]">
@@ -57,7 +57,7 @@ const columns: ColumnDef<User>[] = [
           </span>
         ))}
       </div>
-    ) : <span className="text-zinc-400 text-xs">No roles</span>,
+    ) : <span className="text-zinc-400 text-xs italic">No roles assigned</span>,
   },
 ];
 
@@ -93,7 +93,10 @@ export default function UsersPage() {
         email:      values.email,
         username:   values.username,
         password:   values.password,
-        roles:      (values.roleIDs ?? []).map((id) => ({ roleID: id })),
+        roles: (values.roleIDs ?? []).map((id) => {
+          const roleData = roles.find((r) => r.roleID === id);
+          return { roleID: id, name: roleData?.name || '' };
+        }),
       });
       toast.success('User created successfully');
       qc.invalidateQueries({ queryKey: ['users'] });
@@ -119,7 +122,7 @@ export default function UsersPage() {
           columns={columns}
           data={users}
           filterablePlaceholder="Search users…"
-          searchFields={['username', 'surname', 'otherNames', 'email', 'tel']}
+          searchFields={['surname', 'otherNames', 'email', 'tel']}
           pageSize={10}
         />
       </div>

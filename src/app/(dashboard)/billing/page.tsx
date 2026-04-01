@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ import api from '@/lib/api';
 import { AppDataTable, Button, BottomSheet, TextInput, SelectInput, DateInput } from '@/components/ui';
 import { toast } from '@/components/ui';
 import type { ColumnDef } from '@/components/ui';
+import { getUserProfile } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -101,7 +102,12 @@ const columns: ColumnDef<Bill>[] = [
 
 export default function BillingPage() {
   const [open, setOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const qc = useQueryClient();
+
+  useEffect(() => {
+    setUserProfile(getUserProfile());
+  }, []);
 
   const { data: bills = [] } = useQuery<Bill[]>({
     queryKey: ['bills'],
@@ -130,7 +136,8 @@ export default function BillingPage() {
     const d = values.month;
     const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     try {
-      await api.post('/api/Bill', { ...values, month: monthStr, userID: 0 });
+      const user = getUserProfile();
+      await api.post('/api/Bill', { ...values, month: monthStr, userID: user?.UserID || 1 });
       toast.success('Bill created successfully');
       qc.invalidateQueries({ queryKey: ['bills'] });
       reset();

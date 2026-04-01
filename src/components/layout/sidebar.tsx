@@ -19,6 +19,8 @@ import {
 import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
 import { Tooltip } from 'primereact/tooltip';
+import { getUserProfile, logout } from '@/lib/auth';
+import { useState, useEffect } from 'react';
 
 const mainMenu = [
   { icon: LayoutDashboard, label: 'DASHBOARD', href: '/dashboard' },
@@ -39,6 +41,15 @@ interface SidebarProps {
 
 export default function Sidebar({ isCollapsed, setIsCollapsed, onLogout }: SidebarProps) {
   const pathname = usePathname();
+  const [userProfile, setUserProfile] = useState<any>(null);
+
+  useEffect(() => {
+    setUserProfile(getUserProfile());
+  }, []);
+
+  const displayName = userProfile?.UserName || 'Admin User';
+  const displayEmail = userProfile?.UserName ? `${userProfile.UserName.toLowerCase()}@sewage.gov.gh` : 'admin@sewage.gov.gh';
+  const initials = displayName.substring(0, 2).toUpperCase();
 
   const isActive = (href: string) =>
     href === '/dashboard'
@@ -59,13 +70,13 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, onLogout }: Sideb
             "rounded-full border-4 border-[var(--sidebar-bg)] shadow-md bg-white/10 flex items-center justify-center text-white font-bold tracking-wider",
             isCollapsed ? "w-12 h-12 text-lg" : "w-20 h-20 text-3xl"
           )}>
-            AD
+            {initials}
           </div>
         </div>
         {!isCollapsed && (
            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center text-center">
-             <span className="text-white font-bold text-[14px] tracking-widest uppercase">Admin User</span>
-             <span className="text-white/60 text-[11px] tracking-wide mt-1 lowercase">admin@sewage.gov.gh</span>
+             <span className="text-white font-bold text-[14px] tracking-widest uppercase">{displayName}</span>
+             <span className="text-white/60 text-[11px] tracking-wide mt-1 lowercase">{displayEmail}</span>
            </motion.div>
         )}
       </div>
@@ -113,7 +124,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, onLogout }: Sideb
 
         {/* Settings */}
         <div>
-          <nav className="space-y-1">
+          <nav className="p-0">
             {settingsMenu.map((item) => {
               const active = isActive(item.href);
               return (
@@ -126,7 +137,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, onLogout }: Sideb
                     active
                       ? 'text-[var(--sidebar-bg)] bg-[var(--bg-dashboard)] rounded-l-full ml-8 pl-6'
                       : 'text-white/70 hover:text-white rounded-l-full ml-8 pl-6',
-                    isCollapsed && 'ml-4 pl-0 justify-center rounded-xl w-16 h-14'
+                    isCollapsed && 'ml-4 pl-0 justify-center rounded-xl w-16 h-14 font-black transition-all duration-300'
                   )}
                 >
                   <item.icon className={cn('w-[18px] h-[18px] shrink-0', active ? 'text-[var(--sidebar-bg)]' : 'text-white/60 group-hover:text-white')} />
@@ -138,6 +149,23 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, onLogout }: Sideb
                 </Link>
               );
             })}
+
+            {/* Dedicated Logout */}
+            <button
+               onClick={() => logout()}
+               data-pr-tooltip={isCollapsed ? 'LOGOUT' : ''}
+               className={cn(
+                 "sidebar-item w-full flex items-center gap-4 py-4 transition-all relative group text-white/50 hover:text-rose-400 rounded-l-full ml-8 pl-6 mt-4",
+                 isCollapsed && "ml-4 pl-0 justify-center rounded-xl w-16 h-14"
+               )}
+            >
+               <LogOut className="w-[18px] h-[18px] shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
+               {!isCollapsed && (
+                 <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="whitespace-nowrap text-[11px] font-bold tracking-[0.15em] mt-0.5">
+                   LOGOUT
+                 </motion.span>
+               )}
+            </button>
           </nav>
         </div>
       </div>

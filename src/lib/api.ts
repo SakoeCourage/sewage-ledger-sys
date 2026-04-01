@@ -4,11 +4,10 @@ const api: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? '',
   headers: {
     'Content-Type': 'application/json',
-    Accept: 'application/json',
+    "Accept": 'application/json',
   },
 });
 
-// Request interceptor — attach auth token
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined') {
@@ -22,10 +21,16 @@ api.interceptors.request.use(
   (error: AxiosError) => Promise.reject(error),
 );
 
-// Response interceptor — handle global errors
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
+    if (error.response?.status === 401) {
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        // Dynamically import logout to avoid circular dependency with auth.ts
+        const { logout } = await import('@/lib/auth');
+        logout();
+      }
+    }
     return Promise.reject(error);
   },
 );

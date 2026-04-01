@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ import api from '@/lib/api';
 import { AppDataTable, Button, BottomSheet, TextInput, SelectInput, DateInput } from '@/components/ui';
 import { toast } from '@/components/ui';
 import type { ColumnDef } from '@/components/ui';
+import { getUserProfile } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -19,20 +20,20 @@ interface Payment {
   paymentID: number;
   code: string;
   dated: string;
-  client: { name: string; clientCode: string };
+  client: { name: string; code: string; email: string };
   paymentMode: string;
   refNo: string;
   bank: string;
   dateOnCheque: string;
   amount: number;
-  cashier: { surname: string; otherNames: string };
+  cashier: { name: string; email: string; tel: string };
 }
 
 interface Client { clientID: number; name: string }
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const MODES = ['Cash', 'Cheque', 'MoMo', 'Bank Transfer'] as const;
+const MODES = ['Cash', 'Cheque', 'MoMo', 'Bank Transfer', 'Bank'] as const;
 
 const schema = z.object({
   clientID:    z.number({ message: 'Client is required' }),
@@ -52,6 +53,7 @@ const modeColor: Record<string, string> = {
   Cheque: 'bg-blue-50 text-blue-700',
   MoMo: 'bg-violet-50 text-violet-700',
   'Bank Transfer': 'bg-amber-50 text-amber-700',
+  Bank: 'bg-indigo-50 text-indigo-700',
 };
 
 // ─── Columns ──────────────────────────────────────────────────────────────────
@@ -72,16 +74,38 @@ const columns: ColumnDef<Payment>[] = [
     ),
   },
   { field: 'refNo', header: 'Ref No.' },
-  { field: 'bank', header: 'Bank' },
+  { field: 'bank', header: 'Bank', body: (row) => row.bank || '—' },
+  { field: 'dateOnCheque', header: 'Chq. Date', body: (row) => row.dateOnCheque || '—' },
   { field: 'dated', header: 'Date', sortable: true, body: (row) => row.dated ? new Date(row.dated).toLocaleDateString('en-GB') : '—' },
-  { field: 'cashier', header: 'Received By', body: (row) => row.cashier ? `${row.cashier.surname} ${row.cashier.otherNames}`.trim() : '—' },
+  { field: 'cashier', header: 'Received By', body: (row) => row.cashier?.name ?? '—' },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PaymentsPage() {
   const [open, setOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const qc = useQueryClient();
+
+  useEffect(() => {
+    setUserProfile(getUserProfile());
+  }, []);
+
+  const GHANA_BANKS = [
+    { label: 'GCB Bank', value: 'GCB Bank' },
+    { label: 'Ecobank Ghana', value: 'Ecobank Ghana' },
+    { label: 'Stanbic Bank', value: 'Stanbic Bank' },
+    { label: 'Zenith Bank', value: 'Zenith Bank' },
+    { label: 'Absa Bank', value: 'Absa Bank' },
+    { label: 'Fidelity Bank', value: 'Fidelity Bank' },
+    { label: 'CalBank', value: 'CalBank' },
+    { label: 'ADB Bank', value: 'ADB Bank' },
+    { label: 'Prudential Bank', value: 'Prudential Bank' },
+    { label: 'SG-Ghana', value: 'SG-Ghana' },
+    { label: 'UBA Ghana', value: 'UBA Ghana' },
+    { label: 'Access Bank', value: 'Access Bank' },
+    { label: 'FNB Ghana', value: 'FNB Ghana' },
+  ];
 
   const { data: payments = [] } = useQuery<Payment[]>({
     queryKey: ['payments'],
@@ -117,7 +141,7 @@ export default function PaymentsPage() {
         dateOnCheque: values.dateOnCheque
           ? values.dateOnCheque.toISOString().split('T')[0]
           : null,
-        userID: 0,
+        userID: userProfile?.UserID || 1,
       });
       toast.success('Payment recorded successfully');
       qc.invalidateQueries({ queryKey: ['payments'] });
@@ -201,8 +225,9 @@ export default function PaymentsPage() {
 
           {showBank && (
             <Controller name="bank" control={control} render={({ field }) => (
-              <TextInput label="Bank Name" name={field.name} value={field.value ?? ''}
-                onChange={field.onChange} placeholder="e.g. GCB Bank" />
+              <SelectInput label="Bank Name" name={field.name} value={field.value ?? ''} filter
+                options={GHANA_BANKS}
+                onChange={(e) => field.onChange(e.target.value)} placeholder="Select Bank" />
             )} />
           )}
 

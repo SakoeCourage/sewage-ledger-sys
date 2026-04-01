@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
@@ -10,6 +10,8 @@ import api from '@/lib/api';
 import { AppDataTable, Button, BottomSheet, TextInput } from '@/components/ui';
 import { toast } from '@/components/ui';
 import type { ColumnDef } from '@/components/ui';
+import { getUserProfile } from '@/lib/auth';
+import { cn } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,7 +21,7 @@ interface BillingRate {
   billingType: string;
   rate: number;
   dated: string;
-  createdBy: { surname: string; otherNames: string };
+  createdBy: { name: string; email: string; tel: string };
 }
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -42,14 +44,19 @@ const columns: ColumnDef<BillingRate>[] = [
       ? row.rate.toLocaleString('en-GH', { minimumFractionDigits: 2 }) : '—',
   },
   { field: 'dated', header: 'Created On', sortable: true, body: (row) => row.dated ? new Date(row.dated).toLocaleDateString('en-GB') : '—' },
-  { field: 'createdBy', header: 'Created By', body: (row) => row.createdBy ? `${row.createdBy.surname} ${row.createdBy.otherNames}`.trim() : '—' },
+  { field: 'createdBy', header: 'Created By', body: (row) => row.createdBy?.name ?? '—' },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function BillingRatesPage() {
   const [open, setOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const qc = useQueryClient();
+
+  useEffect(() => {
+    setUserProfile(getUserProfile());
+  }, []);
 
   const { data: rates = [] } = useQuery<BillingRate[]>({
     queryKey: ['billing-rates'],
@@ -63,7 +70,11 @@ export default function BillingRatesPage() {
 
   const onSubmit = async (values: FormValues) => {
     try {
-      await api.post('/api/BillingRate', { billingType: values.billingType, rate: parseFloat(values.rate), userID: 0 });
+      await api.post('/api/BillingRate', { 
+        billingType: values.billingType, 
+        rate: parseFloat(values.rate), 
+        userID: userProfile?.UserID || 1 
+      });
       toast.success('Billing rate created successfully');
       qc.invalidateQueries({ queryKey: ['billing-rates'] });
       reset();
