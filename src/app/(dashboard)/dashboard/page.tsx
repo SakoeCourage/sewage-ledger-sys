@@ -54,23 +54,30 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon, color, loading, href }: StatCardProps) {
   const content = (
-    <div className={cn("bg-white rounded-2xl border border-zinc-100 shadow-sm p-5 flex items-center gap-4 transition-all", href && "hover:shadow-md hover:border-[var(--sidebar-bg)]/40 hover:-translate-y-0.5 active:scale-[0.98]")}>
-      <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center shrink-0', color)}>
+    <div className={cn(
+      "bg-white rounded-2xl border border-zinc-100 shadow-sm p-6 flex flex-col gap-5 transition-all group h-full", 
+      href && "hover:shadow-md hover:border-[var(--sidebar-bg)]/40 hover:-translate-y-1 active:scale-[0.98]"
+    )}>
+      <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm', color)}>
         {icon}
       </div>
-      <div className="min-w-0">
-        <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide">{label}</p>
-        {loading ? (
-          <div className="h-6 w-16 bg-zinc-100 rounded animate-pulse mt-1" />
-        ) : (
-          <p className="text-2xl font-semibold text-zinc-800 mt-0.5">{value}</p>
-        )}
+      <div className="flex flex-col gap-1">
+        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] opacity-80 group-hover:text-[var(--sidebar-bg)] transition-colors">{label}</p>
+        <div className="flex items-baseline gap-1">
+          {loading ? (
+            <div className="h-8 w-24 bg-zinc-100 rounded animate-pulse mt-2" />
+          ) : (
+            <p className="text-2xl font-bold text-zinc-800 tracking-tight tabular-nums truncate" title={String(value)}>
+              {value}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
 
   if (href) {
-    return <Link href={href} className="block outline-none">{content}</Link>;
+    return <Link href={href} className="block outline-none h-full">{content}</Link>;
   }
   return content;
 }
@@ -222,11 +229,11 @@ export default function DashboardPage() {
           href="/payments"
         />
         <StatCard
-          label="Amount Collected"
+          label="Amount Collected (GHS)"
           value={
             loadingPayments
               ? '—'
-              : `GHS ${totalCollected.toLocaleString('en-GH', { minimumFractionDigits: 2 })}`
+              : totalCollected.toLocaleString('en-GH', { minimumFractionDigits: 2 })
           }
           icon={<TrendingUp className="w-5 h-5 text-white" />}
           color="bg-amber-500"
