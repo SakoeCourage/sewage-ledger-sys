@@ -22,6 +22,8 @@ import { motion } from 'motion/react';
 import { Tooltip } from 'primereact/tooltip';
 import { getUserProfile, logout } from '@/lib/auth';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import logo from "@/public/images/logo.png";
 
 const mainMenu = [
   { icon: LayoutDashboard, label: 'DASHBOARD', href: '/dashboard' },
@@ -88,11 +90,21 @@ export default function Sidebar({
       {/* Profile Section */}
       <div className={cn("flex flex-col items-center mb-10 transition-all", isCollapsed ? "lg:px-2 px-8" : "px-8")}>
         <div className="relative mb-4">
-          <div className={cn(
-            "rounded-full border-4 border-[var(--sidebar-bg)] shadow-md bg-white/10 flex items-center justify-center text-white font-bold tracking-wider",
-            isCollapsed ? "lg:w-12 lg:h-12 lg:text-lg w-20 h-20 text-3xl" : "w-20 h-20 text-3xl"
+        <div className={cn(
+            "rounded-full border-4 border-[var(--sidebar-bg)] shadow-md bg-white/70 flex items-center justify-center overflow-hidden",
+            isCollapsed 
+              ? "lg:w-12 lg:h-12 w-20 h-20" 
+              : "w-20 h-20"
           )}>
-            {initials}
+            
+            <Image
+              src={logo}
+              alt="Logo"
+              width={60}
+              height={60}
+              className="object-contain"
+            />
+
           </div>
         </div>
         {(!isCollapsed || isMobileOpen) && (
