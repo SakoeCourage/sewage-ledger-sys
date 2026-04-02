@@ -5,6 +5,8 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { Droplets } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
+import logo from "@/public/images/logo.png";
 
 function LoaderContent() {
   const pathname = usePathname();
@@ -13,6 +15,7 @@ function LoaderContent() {
 
   // Hide loader when route finally changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsNavigating(false);
   }, [pathname, searchParams]);
 
@@ -42,7 +45,7 @@ function LoaderContent() {
 
     document.addEventListener('click', handleAnchorClick);
     window.addEventListener('navigation-start', handleNavStart);
-    
+
     return () => {
       document.removeEventListener('click', handleAnchorClick);
       window.removeEventListener('navigation-start', handleNavStart);
@@ -61,29 +64,30 @@ function LoaderContent() {
           <div className="relative flex items-center justify-center">
             {/* Pulsing rings */}
             <motion.div
-              animate={{ 
+              animate={{
                 scale: [1, 1.5, 1],
-                opacity: [0.3, 0.1, 0.3] 
+                opacity: [0.3, 0.1, 0.3]
               }}
               transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
               className="absolute w-32 h-32 bg-emerald-400/20 rounded-full"
             />
             <motion.div
-              animate={{ 
+              animate={{
                 scale: [1, 1.2, 1],
-                opacity: [0.5, 0.2, 0.5] 
+                opacity: [0.5, 0.2, 0.5]
               }}
               transition={{ repeat: Infinity, duration: 2, ease: "easeInOut", delay: 0.5 }}
               className="absolute w-24 h-24 bg-emerald-400/30 rounded-full"
             />
-            
+
             {/* Center Icon */}
-            <div className="relative bg-white/10 p-5 rounded-full border border-white/20 shadow-2xl backdrop-blur-xl">
-              <Droplets className="w-8 h-8 text-emerald-300 animate-bounce" />
+            <div className="relative  p-5 rounded-full border border-white/20 bg-white/70 shadow-2xl backdrop-blur-xl">
+              <Image  src={logo} alt="Logo" width={60} height={60} className='mx-auto ' />
+              {/* <Droplets className="w-8 h-8 text-emerald-300 animate-bounce" /> */}
             </div>
           </div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
