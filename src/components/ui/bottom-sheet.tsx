@@ -60,7 +60,7 @@ export default function BottomSheet({
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center">
           {/* Backdrop */}
           <motion.div
             key="sheet-backdrop"
