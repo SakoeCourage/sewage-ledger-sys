@@ -55,7 +55,7 @@ export default function LoginPage() {
   const onSubmit = async (values: FormValues) => {
     try {
       await login(values.username, values.password);
-      router.replace('/dashboard');
+      window.location.href = '/dashboard';
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed. Please try again.';
       toast.error(message);

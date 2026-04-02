@@ -15,6 +15,7 @@ import {
   Droplets,
   BadgePercent,
   ShieldCheck,
+  BarChart2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
@@ -27,6 +28,7 @@ const mainMenu = [
   { icon: Users,           label: 'CLIENTS',   href: '/clients'   },
   { icon: FileText,        label: 'BILLING',   href: '/billing'   },
   { icon: CreditCard,      label: 'PAYMENTS',  href: '/payments'  },
+  { icon: BarChart2,       label: 'REPORTS',   href: '/reports'   },
 ];
 
 const settingsMenu = [

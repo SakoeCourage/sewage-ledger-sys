@@ -241,7 +241,7 @@ export default function ClientsPage() {
           <div className="sm:col-span-2">
             <Controller name="address" control={control} render={({ field }) => (
               <TextInput label="Address" name={field.name} value={field.value} multiline rows={2}
-                onChange={field.onChange} error={errors.address?.message} placeholder="Physical address" required />
+                onChange={field.onChange} error={errors.address?.message} placeholder="Physical Address e.g GK, Tema Community 5" required />
             )} />
           </div>
 

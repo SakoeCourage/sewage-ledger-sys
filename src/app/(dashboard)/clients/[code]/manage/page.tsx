@@ -361,7 +361,7 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
                     <div className="relative z-10">
                       <p className="text-teal-100 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Financial Status</p>
                       <h4 className="text-3xl font-black mb-10 text-white tabular-nums">
-                        GHS {stats.balance.toLocaleString('en-GH', { minimumFractionDigits: 2 })}
+                        GHS {Math.abs(stats.balance).toLocaleString('en-GH', { minimumFractionDigits: 2 })}
                       </h4>
                       
                       <div className="space-y-6">
@@ -374,7 +374,7 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
                           <span className="font-black text-sm text-white tabular-nums">GHS {stats.totalPaid?.toLocaleString()}</span>
                         </div>
                         <div className="flex items-center justify-between py-2 border-b border-white/10">
-                          <span className="text-teal-100 text-[10px] font-bold uppercase">Last Billing Rate</span>
+                          <span className="text-teal-100 text-[10px] font-bold uppercase">Last Billing Amount</span>
                           <span className="font-black text-sm text-white tabular-nums">
                             {client.bills?.[0] ? `GHS ${client.bills[0].rate?.rate?.toLocaleString()}` : '—'}
                           </span>
@@ -508,7 +508,7 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
           <div className="sm:col-span-2 p-4 bg-zinc-50 rounded-xl flex items-center justify-between border border-zinc-100">
             <div>
               <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Outstanding Balance</p>
-              <p className="text-xl font-bold text-zinc-800">GHS {stats.balance.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</p>
+              <p className="text-xl font-bold text-zinc-800">GHS {Math.abs(stats.balance).toLocaleString('en-GH', { minimumFractionDigits: 2 })}</p>
             </div>
             <Wallet className="w-8 h-8 text-zinc-200" />
           </div>
