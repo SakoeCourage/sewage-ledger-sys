@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import Sidebar from './sidebar';
 import Navbar from './navbar';
 
@@ -13,21 +14,37 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children, onLogout }: AppLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
   const breadcrumbs = pathname.split('/').filter(Boolean);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--bg-dashboard)]">
+    <div className="flex h-screen overflow-hidden bg-[var(--bg-dashboard)] relative">
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileOpen(false)}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[45] lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
       <Sidebar
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
+        isMobileOpen={isMobileOpen}
+        setIsMobileOpen={setIsMobileOpen}
         onLogout={onLogout}
       />
+      
       <div className="flex-1 flex flex-col min-w-0">
-        <Navbar onLogout={onLogout} />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-8 lg:p-12 no-scrollbar bg-[var(--bg-dashboard)] relative">
+        <Navbar onLogout={onLogout} onMenuClick={() => setIsMobileOpen(true)} />
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-12 no-scrollbar bg-[var(--bg-dashboard)] relative">
           {/* Breadcrumb generated from URL */}
           {breadcrumbs.length > 1 && (
             <div className="flex items-center justify-between mb-6">
@@ -48,7 +65,10 @@ export default function AppLayout({ children, onLogout }: AppLayoutProps) {
               </div>
 
               <button
-                onClick={() => router.back()}
+                onClick={() => {
+                  window.dispatchEvent(new Event('navigation-start'));
+                  router.back();
+                }}
                 className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-400 hover:text-[var(--sidebar-bg)] uppercase tracking-widest transition-colors"
                 title="Go Back"
               >

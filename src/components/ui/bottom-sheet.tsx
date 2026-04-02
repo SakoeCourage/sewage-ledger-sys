@@ -20,9 +20,9 @@ export interface BottomSheetProps {
 }
 
 const sizeClass: Record<SheetSize, string> = {
-  auto: 'max-h-[85vh]',
-  half: 'h-[50vh]',
-  full: 'h-[92vh]',
+  auto: 'max-h-[85dvh]',
+  half: 'h-[50dvh]',
+  full: 'h-[100dvh]',
 };
 
 export default function BottomSheet({
@@ -89,6 +89,7 @@ export default function BottomSheet({
             transition={{ type: 'spring', stiffness: 400, damping: 40 }}
             className={cn(
               'relative w-full max-w-2xl bg-white rounded-t-3xl shadow-2xl shadow-zinc-900/30 flex flex-col overflow-hidden',
+              'max-h-[100dvh]',
               sizeClass[size],
               className,
             )}

@@ -56,6 +56,7 @@ export function logout(): void {
   if (typeof window !== 'undefined') {
     localStorage.removeItem(TOKEN_KEY);
     document.cookie = `${COOKIE_NAME}=; Max-Age=0; path=/`;
+    window.dispatchEvent(new Event('navigation-start'));
     window.location.replace('/login');
   }
 }

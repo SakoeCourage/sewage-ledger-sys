@@ -25,8 +25,8 @@ interface Bill {
   code: string;
   month: string;
   dated: string;
-  client: { name: string; clientCode: string };
-  billingRate: { billingType: string; rate: number };
+  client: { name: string; code: string; email: string };
+  billingRate: { type: string; rate: number };
   isSupervisorApproved: boolean;
   isDispatched: boolean;
 }
@@ -118,7 +118,7 @@ const billColumns: ColumnDef<Bill>[] = [
   {
     field: 'billingRate',
     header: 'Rate Type',
-    body: (row) => row.billingRate?.billingType ?? '—',
+    body: (row) => row.billingRate?.type ?? '—',
   },
   {
     field: 'dated',
@@ -139,7 +139,7 @@ const billColumns: ColumnDef<Bill>[] = [
             : 'bg-zinc-100 text-zinc-500',
         )}
       >
-        {row.isSupervisorApproved ? 'Approved' : 'Pending'}
+        {row.isSupervisorApproved ? 'Yes' : 'No'}
       </span>
     ),
   },

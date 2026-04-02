@@ -79,6 +79,7 @@ export interface DataTableProps<TData> {
     persistFiltersInUrl?: boolean;
     className?: string;
     stretchHeight?: boolean;
+    onRowClick?: (data: TData) => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -127,6 +128,7 @@ function AppDataTableInternal<TData extends Record<string, unknown>>({
     parsePayload,
     className,
     stretchHeight = false,
+    onRowClick,
 }: DataTableProps<TData>) {
     const router   = useRouter();
     const pathname = usePathname();
@@ -293,8 +295,8 @@ function AppDataTableInternal<TData extends Record<string, unknown>>({
 
             {/* Toolbar */}
             {((enableTableFilter && filterablePlaceholder) || extendedFilter?.enable || hasAction || headerNotes) && (
-                <div className="bg-white rounded-xl p-3 shadow-sm border border-zinc-100 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 flex-1 min-w-[260px]">
+                <div className="bg-white rounded-xl p-3 shadow-sm border border-zinc-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
                         {filterablePlaceholder && (
                             <SearchInput
                                 defaultValue={filters[searchParamName] ?? ''}
@@ -426,6 +428,8 @@ function AppDataTableInternal<TData extends Record<string, unknown>>({
                             scrollHeight={stretchHeight ? 'flex' : undefined}
                             emptyMessage={<EmptyState caption={emptyDataText} />}
                             className="p-datatable-sm"
+                            onRowClick={(e) => onRowClick?.(e.data as TData)}
+                            rowClassName={() => onRowClick ? 'cursor-pointer transition-colors hover:bg-zinc-50' : ''}
                             pt={{
                                 thead: { className: 'bg-zinc-50' },
                                 column: {

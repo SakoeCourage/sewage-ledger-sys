@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
@@ -97,6 +98,7 @@ const columns: ColumnDef<Client>[] = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ClientsPage() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
 
@@ -146,12 +148,12 @@ export default function ClientsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-zinc-800">Clients</h1>
           <p className="text-sm text-zinc-500 mt-0.5">Manage residential and industry clients</p>
         </div>
-        <Button variant="primary" onClick={() => setOpen(true)}><Plus className="w-4 h-4" /> New Client</Button>
+        <Button variant="primary" className="w-full sm:w-auto" onClick={() => setOpen(true)}><Plus className="w-4 h-4" /> New Client</Button>
       </div>
 
       <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">

@@ -7,6 +7,7 @@ import { PrimeReactProvider } from "primereact/api";
 import QueryProvider from "@/providers/query-provider";
 import Nprogressprovider from "@/providers/n-progress-provider";
 import { Toaster } from "@/components/ui";
+import GlobalLoader from "@/components/layout/global-loader";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,6 +27,7 @@ export default function RootLayout({
         <PrimeReactProvider value={{ unstyled: false }}>
           <QueryProvider>
             <Nprogressprovider>
+              <GlobalLoader />
               {children}
               <Toaster />
             </Nprogressprovider>

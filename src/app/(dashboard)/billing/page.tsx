@@ -22,9 +22,9 @@ interface Bill {
   month: string;
   dated: string;
   balanceBroughtForward: number;
-  client: { name: string; clientCode: string };
-  billingRate: { billingType: string; rate: number };
-  billedBy: { surname: string; otherNames: string };
+  client: { name: string; code: string; email: string };
+  billingRate: { type: string; rate: number };
+  billedBy: { name: string; email: string; tel: string };
   isSupervisorApproved: boolean;
   isDispatched: boolean;
   narration: string;
@@ -70,7 +70,7 @@ const columns: ColumnDef<Bill>[] = [
   { field: 'code', header: 'Bill Code', sortable: true },
   { field: 'month', header: 'Month', sortable: true },
   { field: 'client', header: 'Client', body: (row) => <span className="font-medium text-zinc-700">{row.client?.name ?? '—'}</span> },
-  { field: 'billingRate', header: 'Rate Type', body: (row) => row.billingRate?.billingType ?? '—' },
+  { field: 'billingRate', header: 'Rate Type', body: (row) => row.billingRate?.type ?? '—' },
   {
     field: 'balanceBroughtForward', header: 'Bal. B/F (GHS)', sortable: true,
     body: (row) => typeof row.balanceBroughtForward === 'number'
@@ -82,7 +82,7 @@ const columns: ColumnDef<Bill>[] = [
     body: (row) => (
       <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
         row.isSupervisorApproved ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700')}>
-        {row.isSupervisorApproved ? 'Approved' : 'Pending'}
+        {row.isSupervisorApproved ? 'Yes' : 'No'}
       </span>
     ),
   },
@@ -95,7 +95,7 @@ const columns: ColumnDef<Bill>[] = [
       </span>
     ),
   },
-  { field: 'billedBy', header: 'Billed By', body: (row) => row.billedBy ? `${row.billedBy.surname} ${row.billedBy.otherNames}`.trim() : '—' },
+  { field: 'billedBy', header: 'Billed By', body: (row) => row.billedBy?.name ?? '—' },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -149,12 +149,12 @@ export default function BillingPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-zinc-800">Billing</h1>
           <p className="text-sm text-zinc-500 mt-0.5">View and manage client bills</p>
         </div>
-        <Button variant="primary" onClick={() => setOpen(true)}><Plus className="w-4 h-4" /> New Bill</Button>
+        <Button variant="primary" className="w-full sm:w-auto" onClick={() => setOpen(true)}><Plus className="w-4 h-4" /> New Bill</Button>
       </div>
 
       <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
@@ -169,7 +169,7 @@ export default function BillingPage() {
             enable: true,
             filters: [
               { type: 'SelectFilter', accessor: 'isSupervisorApproved', label: 'Approval Status',
-                args: { options: [{ label: 'Approved', value: true }, { label: 'Pending', value: false }] } },
+                args: { options: [{ label: 'Yes', value: true }, { label: 'No', value: false }] } },
               { type: 'SelectFilter', accessor: 'isDispatched', label: 'Dispatched',
                 args: { options: [{ label: 'Yes', value: true }, { label: 'No', value: false }] } },
             ],

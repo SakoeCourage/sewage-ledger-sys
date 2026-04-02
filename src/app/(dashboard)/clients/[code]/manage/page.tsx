@@ -440,7 +440,7 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
             {activeTab === 'payments' && (
               <motion.div key="payments" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                 <div className="bg-white rounded-2xl border border-zinc-100 overflow-hidden flex flex-col">
-                  <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/30">
+                  <div className="p-6 border-b border-zinc-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-zinc-50/30">
                     <div>
                       <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest">Payment History</h3>
                       <p className="text-[10px] text-zinc-500 font-medium mt-1">View and manage all financial receipts for this client</p>
@@ -448,7 +448,7 @@ export default function ManageClientPage({ params }: { params: Promise<{ code: s
                     <Button 
                       variant="primary" 
                       onClick={() => setIsPaymentSheetOpen(true)}
-                      className="!h-10 px-6 bg-[#4a907a] hover:bg-[#3d7a67] text-white text-[10px] font-black uppercase tracking-widest shadow-sm"
+                      className="!h-10 w-full sm:w-auto px-6 bg-[#4a907a] hover:bg-[#3d7a67] text-white text-[10px] font-black uppercase tracking-widest shadow-sm"
                     >
                       <Plus className="w-4 h-4 mr-2" /> Record Payment
                     </Button>

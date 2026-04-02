@@ -86,12 +86,12 @@ export default function BillingRatesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-zinc-800">Billing Rates</h1>
           <p className="text-sm text-zinc-500 mt-0.5">Configure billing rate tiers</p>
         </div>
-        <Button variant="primary" onClick={() => setOpen(true)}><Plus className="w-4 h-4" /> New Rate</Button>
+        <Button variant="primary" className="w-full sm:w-auto" onClick={() => setOpen(true)}><Plus className="w-4 h-4" /> New Rate</Button>
       </div>
 
       <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm p-5">
